@@ -1,0 +1,35 @@
+.nav{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #fff;
+}
+
+.nav .logo{
+    font-family: sans-serif;
+    font-weight: bolder;
+    display: flex;
+    align-items: center;
+    margin-left: 10px;
+}
+
+.nav .logo img{
+    height: 30px;
+}
+
+.nav .username{
+    font-weight: bold;
+    font-family: 'Open Sans', sans-serif;
+}
+
+.nav button{
+    width: 90px;
+    height: 30px;
+    border: none;
+    margin-right: 10px;
+    background: #3c00a0;
+    border-radius: 20px;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+}
