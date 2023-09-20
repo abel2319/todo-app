@@ -31,7 +31,7 @@ async function signinBtnClick(){
                         window.localStorage.setItem("name", data.user.name);
                         window.localStorage.setItem("token", "Bearer " + data.token);
                         
-                        window.location.href = "../pages/todo.html";
+                        window.location.href = "./pages/todo.html";
                     }
                     else alert("Internal server error. Please try again");
                 });
@@ -87,7 +87,7 @@ async function signupBtnClick (){
                                 window.localStorage.setItem("name", data.user.name);
                                 window.localStorage.setItem("token", "Bearer " + data.token);
                                 
-                                window.location.href = "../pages/todo.html";
+                                window.location.href = "./pages/todo.html";
                             }
                             else alert("Internal server error. Please try again");
                         });
@@ -106,6 +106,7 @@ async function signupBtnClick (){
         signinBtn.classList.add("disabled");
     }
 }
+
 
 signinBtn.addEventListener('click', signinBtnClick)
 signupBtn.addEventListener('click', signupBtnClick)

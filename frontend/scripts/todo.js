@@ -9,6 +9,8 @@ const modalInput = document.getElementById('inputbox');
 const modalSelect = document.getElementById('tagModal');
 const modalBtn = document.getElementById('addTaskBtn');
 
+const toastBox = document.getElementsByName('toastBox');
+
 const listContainer = document.getElementById('list-container');
 const closeI = document.getElementsByClassName('close');
 
@@ -136,12 +138,27 @@ function closeModal(e) {
   }
 }
 
-function add(){
+async function add(){
   if(modalInput.value === ""|| modalSelect.value === "Tag")
     alert("Please fill the input field and select a tag");
   else{
-    let task = {id:'abel', name: modalInput.value, tag:modalSelect.value};
-    createTask(task);
+    await fetch("http://localhost:5001/api/tasks/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "authorization": window.localStorage.token
+      },
+      body: JSON.stringify({
+        "name": modalInput.value,
+        "tag": modalSelect.value
+      }),
+    }).then((data)=> data.json()).then(data => {
+      console.log(data);
+      if (data.success){
+        createTask(data.row);
+      }
+    })
+    
     modalInput.value = ""
     modalSelect.value = 'Tag';
     modal.style.display = 'none';
@@ -153,42 +170,42 @@ async function update(){
     alert("Please fill the input field and select a tag");
   else{
     await fetch("http://localhost:5001/api/tasks/"+id, {
-        method: "PATCH",
-        headers: {
-            "Content-Type": "application/json",
-            "authorization": window.localStorage.token
-        },
-        body: JSON.stringify({
-            "name": modalInput.value,
-            "tag": modalSelect.value
-        }),
+      method: "PATCH",
+      headers: {
+          "Content-Type": "application/json",
+          "authorization": window.localStorage.token
+      },
+      body: JSON.stringify({
+          "name": modalInput.value,
+          "tag": modalSelect.value
+      }),
     }).then((data)=> data.json()).then(data => {
-        console.log(data);
-        if(data.success) {
-          const taskTmp = document.getElementById(id)
-          taskTmp.children[0].innerHTML = modalInput.value;
-          if(modalSelect.value === "progress")
-          {
-            taskTmp.children[1].children[0].innerHTML = `<i class="fa-solid fa-bars-progress"></i> ${modalSelect.value}`;
-            taskTmp.children[1].setAttribute("class", "progress");
-          }
-          else if (modalSelect.value === "done")
-          {
-            taskTmp.children[1].children[0].innerHTML = `<i class="fa-solid fa-check"></i> ${modalSelect.value}`;
-            taskTmp.children[1].setAttribute("class", "done");
-          }
-          else if (modalSelect.value === "todo")
-          {
-            taskTmp.children[1].children[0].innerHTML = `<i class="fa-solid fa-arrow-right-to-bracket"></i> ${modalSelect.value}`;
-            taskTmp.children[1].setAttribute("class", "todo");
-          }
+      console.log(data);
+      if(data.success) {
+        const taskTmp = document.getElementById(id)
+        taskTmp.children[0].innerHTML = modalInput.value;
+        if(modalSelect.value === "progress")
+        {
+          taskTmp.children[1].children[0].innerHTML = `<i class="fa-solid fa-bars-progress"></i> ${modalSelect.value}`;
+          taskTmp.children[1].setAttribute("class", "progress");
         }
-        else{
-          alert('Something went wrong, try again later')
+        else if (modalSelect.value === "done")
+        {
+          taskTmp.children[1].children[0].innerHTML = `<i class="fa-solid fa-check"></i> ${modalSelect.value}`;
+          taskTmp.children[1].setAttribute("class", "done");
         }
-        modalSelect.value = 'Tag';
-        modalInput.value = ""
-        modal.style.display = 'none';
+        else if (modalSelect.value === "todo")
+        {
+          taskTmp.children[1].children[0].innerHTML = `<i class="fa-solid fa-arrow-right-to-bracket"></i> ${modalSelect.value}`;
+          taskTmp.children[1].setAttribute("class", "todo");
+        }
+      }
+      else{
+        alert('Something went wrong, try again later')
+      }
+      modalSelect.value = 'Tag';
+      modalInput.value = ""
+      modal.style.display = 'none';
     })
     
   }
@@ -207,7 +224,6 @@ function createTask(items){
   const todoName = document.createElement('p');
   const todoTag = document.createElement('div');
   const tagText = document.createElement('p');
-  const tagImg = document.createElement('i');
   const todoClose = document.createElement('div');
   const closeImg = document.createElement('i');
   closeImg.classList.add('fa-solid');
@@ -237,15 +253,51 @@ function createTask(items){
   todo.appendChild(todoTag);
   todo.appendChild(todoClose);
   todo.setAttribute('id', items.id);
+  todo.addEventListener('click',(e)=>{
+    id = items.id;
+    if(e.target.classList.contains("fa-xmark")){
+      listContainer.removeChild(document.getElementById(id));
+      if(remove(id)) alert('Good')//toastShow('Remove successfully')
+      else alert('A problem append try later')
+    } else {
+      modalBtn.textContent = "Update";
+      modalInput.value = todo.children[0].textContent;
+      modalSelect.value = todo.children[1].children[0].textContent.split(" ")[1];
+      modal.style.display = "block";
+      modalBtn.onclick = update;
+    }
+  })
   listContainer.appendChild(todo)
 
 }
 
+function toastShow(msg){
+  console.log(msg)
+  let toast = document.createElement('div');
+  toast.classList.add('toast');
+  toast.innerHTML = msg
+  toastBox.style.display = '';
+  toastBox.appendChild(toast);
+
+  setTimeout(()=>{
+    toastBox.style.display = 'none';
+  }, 6000)
+}
+
+async function remove(id){
+  await fetch("http://localhost:5001/api/tasks/"+id, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "authorization": window.localStorage.token
+    }
+  }).then((data)=> data.json()).then(async (data) => {
+    if (data.success) return true;
+    return false;
+  })
+}
 
 window.addEventListener('load',async ()=>{
-  tasks.rows.map((items)=>{
-    //createTask(items)
-  })
 
   await fetch("http://localhost:5001/api/tasks/", {
     headers: {
@@ -254,32 +306,13 @@ window.addEventListener('load',async ()=>{
     }
   }).then((data)=> data.json()).then(async (data) => {
     for (const row of data.rows) {
-      if (row.tag === "debut") row.tag = "todo"
-      if (row.tag === "finie") row.tag = "done"
-      if (row.tag === "en_cour" || row.tag === "en_cours") row.tag = "progress"
       createTask(row)
     }
   });
 
-
-  const list = [];
-  for (let child of listContainer.children){
-    list.push(child);
-  }
-  list.map((items)=>{
-    items.addEventListener('click',()=>{
-      id = items.getAttribute('id');
-      modalBtn.textContent = "Update";
-      modalInput.value = items.children[0].textContent;
-      modalSelect.value = items.children[1].children[0].textContent.split(" ")[1];
-      modal.style.display = "block";
-      modalBtn.onclick = update;
-    });
-  });
   username.innerHTML = `<i class="fa-solid fa-user"></i> ${window.localStorage.getItem('name')}`;
   modal.style.display = 'none';
 })
-
 
 inputSearch.addEventListener('input', ()=>{
   const filter = inputSearch.value.toLowerCase();
@@ -312,4 +345,26 @@ signOut.addEventListener('click',()=>{
     <div class="close">
         <i class="fa-solid fa-xmark"></i>
     </div>
-</div>*/
+</div>
+
+const list = [];
+    for (let child of listContainer.children){
+      list.push(child);
+    }
+    list.map((items)=>{
+      items.addEventListener('click',(e)=>{
+        id = items.getAttribute('id');
+        if(e.target.classList.contains("fa-xmark")){
+          listContainer.removeChild(document.getElementById(id));
+          if(remove(id)) alert('Good')//toastShow('Remove successfully')
+          else alert('A problem append try later')
+        } else {
+          modalBtn.textContent = "Update";
+          modalInput.value = items.children[0].textContent;
+          modalSelect.value = items.children[1].children[0].textContent.split(" ")[1];
+          modal.style.display = "block";
+          modalBtn.onclick = update;
+        }
+      });
+    });
+*/
